@@ -6,13 +6,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopifyData = await fetchShopifyData(date);
+    // Fetch both Shopify and Meta data
+    const [shopifyData, metaData] = await Promise.all([
+      fetchShopifyData(date),
+      fetchMetaData(date)
+    ]);
     
     const result = {
       revenue: shopifyData.revenue,
       orders: shopifyData.orders,
-      metaAdSpend: 0,
-      tiktokAdSpend: 0
+      metaAdSpend: metaData.spend,
+      tiktokAdSpend: 0 // Still hardcoded for now
     };
 
     res.status(200).json(result);
@@ -54,4 +58,29 @@ async function fetchShopifyData(date) {
     revenue,
     orders: data.orders.length
   };
+}
+
+async function fetchMetaData(date) {
+  // Format date for Meta API (YYYY-MM-DD)
+  const formattedDate = date;
+  
+  const response = await fetch(
+    `https://graph.facebook.com/v18.0/${process.env.META_AD_ACCOUNT_ID}/insights?` +
+    `time_range={'since':'${formattedDate}','until':'${formattedDate}'}&` +
+    `fields=spend&` +
+    `access_token=${process.env.META_ACCESS_TOKEN}`
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Meta API error:', errorText);
+    throw new Error(`Meta API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  
+  // Meta returns spend data in an array
+  const spend = data.data && data.data.length > 0 ? parseFloat(data.data[0].spend) : 0;
+
+  return { spend };
 }
