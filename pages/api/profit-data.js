@@ -1,14 +1,18 @@
 export default async function handler(req, res) {
   const { date } = req.query;
   
+  if (!date) {
+    return res.status(400).json({ error: 'Date parameter required' });
+  }
+
   try {
     const shopifyData = await fetchShopifyData(date);
     
     const result = {
       revenue: shopifyData.revenue,
       orders: shopifyData.orders,
-      metaAdSpend: 0, // temporary
-      tiktokAdSpend: 0 // temporary
+      metaAdSpend: 0,
+      tiktokAdSpend: 0
     };
 
     res.status(200).json(result);
@@ -18,7 +22,6 @@ export default async function handler(req, res) {
   }
 }
 
-// Shopify API function
 async function fetchShopifyData(date) {
   const startDate = new Date(date);
   const endDate = new Date(date);
@@ -38,4 +41,17 @@ async function fetchShopifyData(date) {
   );
 
   if (!response.ok) {
-    throw new Error(`Shopify API error: ${response.
+    throw new Error(`Shopify API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  
+  const revenue = data.orders.reduce((sum, order) => {
+    return sum + parseFloat(order.total_price);
+  }, 0);
+
+  return {
+    revenue,
+    orders: data.orders.length
+  };
+}
