@@ -61,8 +61,8 @@ async function fetchShopifyData(date) {
 }
 
 async function fetchMetaData(date) {
-  // Meta API needs date format without dashes
-  const formattedDate = date.replace(/-/g, '');
+  // Meta API wants YYYY-MM-DD format (keep the dashes!)
+  const formattedDate = date;
   
   const url = `https://graph.facebook.com/v18.0/${process.env.META_AD_ACCOUNT_ID}/insights?` +
     `time_range={"since":"${formattedDate}","until":"${formattedDate}"}&` +
