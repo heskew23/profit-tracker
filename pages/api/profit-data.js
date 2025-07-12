@@ -61,25 +61,27 @@ async function fetchShopifyData(date) {
 }
 
 async function fetchMetaData(date) {
-  // Format date for Meta API (YYYY-MM-DD)
-  const formattedDate = date;
+  // Meta API needs date format without dashes
+  const formattedDate = date.replace(/-/g, '');
   
-  const response = await fetch(
-    `https://graph.facebook.com/v18.0/${process.env.META_AD_ACCOUNT_ID}/insights?` +
-    `time_range={'since':'${formattedDate}','until':'${formattedDate}'}&` +
+  const url = `https://graph.facebook.com/v18.0/${process.env.META_AD_ACCOUNT_ID}/insights?` +
+    `time_range={"since":"${formattedDate}","until":"${formattedDate}"}&` +
     `fields=spend&` +
-    `access_token=${process.env.META_ACCESS_TOKEN}`
-  );
+    `access_token=${process.env.META_ACCESS_TOKEN}`;
+    
+  console.log('Meta API URL:', url);
+  
+  const response = await fetch(url);
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Meta API error:', errorText);
-    throw new Error(`Meta API error: ${response.status}`);
+    console.error('Meta API error:', response.status, errorText);
+    throw new Error(`Meta API error: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
+  console.log('Meta API response:', data);
   
-  // Meta returns spend data in an array
   const spend = data.data && data.data.length > 0 ? parseFloat(data.data[0].spend) : 0;
 
   return { spend };
